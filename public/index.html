@@ -782,12 +782,8 @@ function spawnClouds() {
 }
 
 function shoot() {
-  if (reloading || ammo <= 0) return;
   if (fireTimer > 0) return;
-
-  ammo--;
   fireTimer = fireRate;
-  updateHUD();
 
   muzzleFlash.material.opacity = 0.9;
   ak47.userData.muzzleLight.intensity = 3;
@@ -850,7 +846,6 @@ function shoot() {
     }
   }
 
-  if (ammo <= 0) startReload();
 }
 
 function startReload() {
@@ -970,9 +965,7 @@ function showDamageFlash() {
 
 function updateHUD() {
   document.getElementById('score-text').textContent = 'SCORE: ' + score;
-  document.getElementById('ammo-text').textContent = reloading
-    ? 'RELOADING...'
-    : ammo + ' / ' + maxAmmo;
+  document.getElementById('ammo-text').textContent = 'INF';
   document.getElementById('health-bar').style.width = (health / 250 * 100) + '%';
   if (health < 75) {
     document.getElementById('health-bar').style.background = '#ff2222';
