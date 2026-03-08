@@ -6,7 +6,7 @@
 <title>CARPET SHOOTER</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { background: #000; overflow: hidden; font-family: Arial, sans-serif; font-weight: 700; }
+body { background: #4a90d9; overflow: hidden; font-family: Arial, sans-serif; font-weight: 700; }
 canvas { display: block; }
 #hud {
   position: fixed; top: 0; left: 0; width: 100%; padding: 20px;
@@ -126,7 +126,7 @@ canvas { display: block; }
 import * as THREE from 'three';
 
 let scene, camera, renderer, clock;
-let carpet, ak47, muzzleFlash;
+let carpet, player, ak47, muzzleFlash;
 let jets = [];
 let bullets = [];
 let clouds = [];
@@ -159,14 +159,15 @@ const mouse = new THREE.Vector2(0, 0);
 const lookTarget = new THREE.Vector2(0, 0);
 const lookSmooth = new THREE.Vector2(0, 0);
 const sensitivity = 0.002;
+const cameraOffset = new THREE.Vector3(0, 4, 8);
 
 function init() {
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x111111);
-  scene.fog = new THREE.Fog(0x111111, 80, 250);
+  scene.background = new THREE.Color(0x87CEEB);
+  scene.fog = new THREE.Fog(0x87CEEB, 100, 300);
 
-  camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 500);
-  camera.position.set(0, 2.5, 0);
+  camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 500);
+  camera.position.set(0, 6, 10);
 
   renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
@@ -176,19 +177,23 @@ function init() {
 
   clock = new THREE.Clock();
 
-  const ambient = new THREE.AmbientLight(0x444466, 1.5);
+  const ambient = new THREE.AmbientLight(0x88aacc, 1.2);
   scene.add(ambient);
 
-  const sun = new THREE.DirectionalLight(0xffeedd, 2);
-  sun.position.set(50, 100, 50);
+  const sun = new THREE.DirectionalLight(0xfff5e0, 2.5);
+  sun.position.set(50, 80, 30);
   sun.castShadow = true;
   scene.add(sun);
 
-  const moonLight = new THREE.DirectionalLight(0x6688cc, 0.5);
-  moonLight.position.set(-30, 50, -20);
-  scene.add(moonLight);
+  const fillLight = new THREE.DirectionalLight(0x8899bb, 0.6);
+  fillLight.position.set(-30, 20, -20);
+  scene.add(fillLight);
+
+  const hemi = new THREE.HemisphereLight(0x87CEEB, 0xE8D5A3, 0.8);
+  scene.add(hemi);
 
   buildCarpet();
+  buildPlayer();
   buildAK47();
   spawnClouds();
   spawnWave();
@@ -279,6 +284,66 @@ function buildCarpet() {
   scene.add(carpet);
 }
 
+function buildPlayer() {
+  player = new THREE.Group();
+  const skinMat = new THREE.MeshStandardMaterial({ color: 0xD4A574, roughness: 0.8 });
+  const shirtMat = new THREE.MeshStandardMaterial({ color: 0xeeeeee, roughness: 0.9 });
+  const pantsMat = new THREE.MeshStandardMaterial({ color: 0x2a2a3a, roughness: 0.9 });
+  const hairMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.95 });
+
+  const torso = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.7, 0.35), shirtMat);
+  torso.position.y = 0.65;
+  player.add(torso);
+
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 8), skinMat);
+  head.position.y = 1.2;
+  player.add(head);
+
+  const hair = new THREE.Mesh(new THREE.SphereGeometry(0.23, 8, 8), hairMat);
+  hair.position.set(0, 1.25, 0.02);
+  hair.scale.set(1, 0.85, 1);
+  player.add(hair);
+
+  const upperArmR = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.35, 0.15), shirtMat);
+  upperArmR.position.set(0.42, 0.75, -0.05);
+  upperArmR.rotation.x = -0.8;
+  player.add(upperArmR);
+
+  const lowerArmR = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.3, 0.12), skinMat);
+  lowerArmR.position.set(0.42, 0.55, -0.35);
+  lowerArmR.rotation.x = -0.4;
+  player.add(lowerArmR);
+
+  const upperArmL = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.35, 0.15), shirtMat);
+  upperArmL.position.set(-0.42, 0.75, -0.05);
+  upperArmL.rotation.x = -1.0;
+  player.add(upperArmL);
+
+  const lowerArmL = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.3, 0.12), skinMat);
+  lowerArmL.position.set(-0.42, 0.45, -0.4);
+  lowerArmL.rotation.x = -0.3;
+  player.add(lowerArmL);
+
+  const upperLegR = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.15, 0.4), pantsMat);
+  upperLegR.position.set(0.18, 0.2, 0);
+  player.add(upperLegR);
+
+  const upperLegL = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.15, 0.4), pantsMat);
+  upperLegL.position.set(-0.18, 0.2, 0);
+  player.add(upperLegL);
+
+  const lowerLegR = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.12, 0.35), pantsMat);
+  lowerLegR.position.set(0.18, 0.1, 0.2);
+  player.add(lowerLegR);
+
+  const lowerLegL = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.12, 0.35), pantsMat);
+  lowerLegL.position.set(-0.18, 0.1, 0.2);
+  player.add(lowerLegL);
+
+  player.position.set(0, 0, 0.5);
+  carpet.add(player);
+}
+
 function buildAK47() {
   ak47 = new THREE.Group();
 
@@ -344,9 +409,9 @@ function buildAK47() {
   ak47.add(muzzleLight);
   ak47.userData.muzzleLight = muzzleLight;
 
-  ak47.position.set(0.35, 1.8, -0.8);
-  ak47.rotation.y = 0;
-  scene.add(ak47);
+  ak47.position.set(0.3, 0.65, -0.3);
+  ak47.rotation.x = -0.15;
+  player.add(ak47);
 }
 
 function createJet() {
@@ -465,7 +530,7 @@ function spawnClouds() {
       const size = 3 + Math.random() * 6;
       const geo = new THREE.SphereGeometry(size, 8, 6);
       const mat = new THREE.MeshStandardMaterial({
-        color: 0x888899, transparent: true, opacity: 0.15 + Math.random() * 0.1
+        color: 0xffffff, transparent: true, opacity: 0.7 + Math.random() * 0.2
       });
       const puff = new THREE.Mesh(geo, mat);
       puff.position.set(
@@ -506,8 +571,10 @@ function shoot() {
 
   const worldMuzzlePos = new THREE.Vector3();
   muzzleFlash.getWorldPosition(worldMuzzlePos);
-  const dir = new THREE.Vector3(0, 0, -1);
-  dir.applyQuaternion(camera.quaternion);
+  const aimTarget = new THREE.Vector3(0, 0, -1);
+  aimTarget.applyQuaternion(camera.quaternion);
+  const aimPoint = camera.position.clone().add(aimTarget.multiplyScalar(100));
+  const dir = aimPoint.sub(worldMuzzlePos).normalize();
 
   const spread = 0.015;
   dir.x += (Math.random() - 0.5) * spread;
@@ -731,7 +798,22 @@ function animate() {
 
   lookSmooth.x += (lookTarget.x - lookSmooth.x) * 8 * dt;
   lookSmooth.y += (lookTarget.y - lookSmooth.y) * 8 * dt;
-  camera.rotation.set(lookSmooth.y, lookSmooth.x, 0);
+
+  animateCarpet(time, dt);
+
+  const carpetWorldPos = new THREE.Vector3();
+  carpet.getWorldPosition(carpetWorldPos);
+
+  const camTarget = carpetWorldPos.clone().add(cameraOffset);
+  camTarget.y += lookSmooth.y * -5;
+  camTarget.x += lookSmooth.x * -3;
+  camera.position.lerp(camTarget, 6 * dt);
+
+  const lookAt = carpetWorldPos.clone();
+  lookAt.z -= 30;
+  lookAt.x += lookSmooth.x * -20;
+  lookAt.y += lookSmooth.y * -10 + 3;
+  camera.lookAt(lookAt);
 
   if (shakeAmount > 0) {
     camera.rotation.x += (Math.random() - 0.5) * shakeAmount;
@@ -739,13 +821,10 @@ function animate() {
     shakeAmount *= 0.85;
   }
 
-  ak47.rotation.y = camera.rotation.y;
-  ak47.rotation.x = camera.rotation.x;
-  const akOffset = new THREE.Vector3(0.35, 1.8, -0.8);
-  akOffset.applyQuaternion(camera.quaternion);
-  ak47.position.copy(camera.position).add(akOffset);
-
-  animateCarpet(time, dt);
+  if (player) {
+    player.rotation.y = lookSmooth.x * 0.5;
+    ak47.rotation.x = lookSmooth.y * 0.8 - 0.15;
+  }
 
   if (fireTimer > 0) fireTimer -= dt;
   if (firing && playing) shoot();
@@ -793,8 +872,11 @@ function animate() {
     t.userData.life -= dt;
 
     if (t.userData.enemy) {
-      const dist = t.position.distanceTo(camera.position);
-      if (dist < 2) {
+      const carpetPos = new THREE.Vector3();
+      carpet.getWorldPosition(carpetPos);
+      carpetPos.y += 1;
+      const dist = t.position.distanceTo(carpetPos);
+      if (dist < 3) {
         const dmg = 8 + Math.random() * 7;
         health -= dmg;
         showDamageFlash();
