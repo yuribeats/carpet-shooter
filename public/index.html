@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>FLYING MAGIC CARPET</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { background: #4a90d9; overflow: hidden; font-family: Arial, sans-serif; font-weight: 700; }
+body { background: #4a90d9; overflow: hidden; font-family: Arial, sans-serif; font-weight: 700; touch-action: none; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
 canvas { display: block; }
 #hud {
   position: fixed; top: 0; left: 0; width: 100%; padding: 20px;
@@ -81,6 +81,17 @@ canvas { display: block; }
   color: #228B22; font-size: 48px; text-transform: uppercase;
   letter-spacing: 4px; font-weight: 700; margin-bottom: 10px;
 }
+@media (max-width: 768px) {
+  .title { font-size: 28px; letter-spacing: 4px; }
+  .subtitle { font-size: 12px; letter-spacing: 2px; margin-bottom: 15px; }
+  .hud-text { font-size: 16px; }
+  #health-bar-bg { width: 120px; height: 8px; }
+  #hud { padding: 10px; }
+  .btn { font-size: 18px; padding: 12px 30px; }
+  #final-score { font-size: 36px; }
+  #crosshair::before { height: 20px; }
+  #crosshair::after { width: 20px; }
+}
 </style>
 <script type="importmap">
 {
@@ -96,9 +107,9 @@ canvas { display: block; }
 <div id="start-screen">
   <div class="title">FLYING MAGIC CARPET</div>
   <div class="subtitle" style="margin-bottom:15px;">FXDXLCWYMXmhhMypVxGHCC2sHA8n9d2fHhePViAYpump</div>
-  <div class="subtitle" style="color:#aaa; font-size:14px; margin-bottom:8px;">MOUSE: AIM / LEFT CLICK: SHOOT</div>
+  <div class="subtitle" id="controls-text" style="color:#aaa; font-size:14px; margin-bottom:8px;">MOUSE: AIM / LEFT CLICK: SHOOT</div>
   <div class="subtitle" style="color:#ff6644; font-size:14px; margin-bottom:30px;">MUSIC WILL PLAY</div>
-  <div class="subtitle" style="font-size:20px;">PRESS ANY KEY TO START</div>
+  <div class="subtitle" id="start-prompt" style="font-size:20px;">PRESS ANY KEY TO START</div>
 </div>
 
 <div id="game-over-screen">
@@ -161,7 +172,12 @@ const mouse = new THREE.Vector2(0, 0);
 const lookTarget = new THREE.Vector2(0, 0);
 const lookSmooth = new THREE.Vector2(0, 0);
 const sensitivity = 0.002;
+const touchSensitivity = 0.004;
 const cameraOffset = new THREE.Vector3(0, 4, 8);
+const isMobile = /Android|iPhone|iPad|iPod|webOS/i.test(navigator.userAgent) || ('ontouchstart' in window && window.innerWidth < 1024);
+let lastTouchX = 0;
+let lastTouchY = 0;
+let touchActive = false;
 
 function init() {
   scene = new THREE.Scene();
@@ -220,6 +236,42 @@ function init() {
     if (e.code === 'KeyR' && !reloading && ammo < maxAmmo) startReload();
   });
   document.addEventListener('contextmenu', (e) => e.preventDefault());
+
+  // touch controls
+  renderer.domElement.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    const touch = e.touches[0];
+    lastTouchX = touch.clientX;
+    lastTouchY = touch.clientY;
+    touchActive = true;
+    firing = true;
+  }, { passive: false });
+
+  renderer.domElement.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    if (!playing || !touchActive) return;
+    const touch = e.touches[0];
+    const dx = touch.clientX - lastTouchX;
+    const dy = touch.clientY - lastTouchY;
+    lastTouchX = touch.clientX;
+    lastTouchY = touch.clientY;
+    lookTarget.x -= dx * touchSensitivity;
+    lookTarget.y -= dy * touchSensitivity;
+    lookTarget.y = Math.max(-1.2, Math.min(1.2, lookTarget.y));
+    lookTarget.x = Math.max(-2.5, Math.min(2.5, lookTarget.x));
+  }, { passive: false });
+
+  renderer.domElement.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    touchActive = false;
+    firing = false;
+  }, { passive: false });
+
+  // mobile UI
+  if (isMobile) {
+    document.getElementById('controls-text').textContent = 'DRAG: AIM / TOUCH: SHOOT';
+    document.getElementById('start-prompt').textContent = 'TAP TO START';
+  }
 
   animate();
 }
@@ -1209,7 +1261,7 @@ function startGame() {
   spawnWave();
 
   playing = true;
-  renderer.domElement.requestPointerLock();
+  if (!isMobile) renderer.domElement.requestPointerLock();
 }
 
 let music;
@@ -1239,6 +1291,7 @@ document.addEventListener('keydown', (e) => {
   }
 });
 document.getElementById('start-screen').addEventListener('click', handleStart);
+document.getElementById('start-screen').addEventListener('touchend', (e) => { e.preventDefault(); handleStart(); }, { passive: false });
 
 document.getElementById('restart-btn').addEventListener('click', () => {
   document.getElementById('game-over-screen').style.display = 'none';
