@@ -137,7 +137,7 @@ let explosions = [];
 let tracers = [];
 
 let score = 0;
-let health = 100;
+let health = 250;
 let ammo = 30;
 let maxAmmo = 30;
 let reloading = false;
@@ -149,7 +149,7 @@ let firing = false;
 let wave = 1;
 let jetsPerWave = 2;
 let jetSpeed = 0.3;
-let jetShootInterval = 3.0;
+let jetShootInterval = 6.0;
 let playing = false;
 let carpetSway = 0;
 let muzzleTimer = 0;
@@ -844,7 +844,7 @@ function shoot() {
       if (jets.filter(j => j.userData.alive).length === 0) {
         wave++;
         jetSpeed += 0.05;
-        jetShootInterval = Math.max(1.0, jetShootInterval - 0.2);
+        jetShootInterval = Math.max(2.5, jetShootInterval - 0.3);
         waveDelay = 2.0;
       }
     }
@@ -973,10 +973,10 @@ function updateHUD() {
   document.getElementById('ammo-text').textContent = reloading
     ? 'RELOADING...'
     : ammo + ' / ' + maxAmmo;
-  document.getElementById('health-bar').style.width = health + '%';
-  if (health < 30) {
+  document.getElementById('health-bar').style.width = (health / 250 * 100) + '%';
+  if (health < 75) {
     document.getElementById('health-bar').style.background = '#ff2222';
-  } else if (health < 60) {
+  } else if (health < 150) {
     document.getElementById('health-bar').style.background = '#ffaa00';
   } else {
     document.getElementById('health-bar').style.background = '#228B22';
@@ -1111,7 +1111,7 @@ function animate() {
       carpetPos.y += 1;
       const dist = t.position.distanceTo(carpetPos);
       if (dist < 3) {
-        const dmg = 8 + Math.random() * 7;
+        const dmg = 5 + Math.random() * 5;
         health -= dmg;
         showDamageFlash();
         updateHUD();
@@ -1195,11 +1195,11 @@ function gameOver() {
 
 function startGame() {
   score = 0;
-  health = 100;
+  health = 250;
   ammo = maxAmmo;
   wave = 1;
   jetSpeed = 0.3;
-  jetShootInterval = 3.0;
+  jetShootInterval = 6.0;
   reloading = false;
   firing = false;
   lookTarget.set(0, 0);
