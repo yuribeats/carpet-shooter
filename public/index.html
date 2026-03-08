@@ -889,8 +889,8 @@ function onMouseMove(e) {
   if (!playing) return;
   lookTarget.x -= e.movementX * sensitivity;
   lookTarget.y -= e.movementY * sensitivity;
-  lookTarget.y = Math.max(-0.5, Math.min(0.5, lookTarget.y));
-  lookTarget.x = Math.max(-1.0, Math.min(1.0, lookTarget.x));
+  lookTarget.y = Math.max(-1.2, Math.min(1.2, lookTarget.y));
+  lookTarget.x = Math.max(-2.5, Math.min(2.5, lookTarget.x));
 }
 
 function onResize() {
