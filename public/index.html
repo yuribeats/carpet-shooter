@@ -300,96 +300,169 @@ function buildCarpet() {
 
 function buildPlayer() {
   player = new THREE.Group();
-  const skinMat = new THREE.MeshStandardMaterial({ color: 0xC49A6C, roughness: 0.7, metalness: 0.05 });
+
+  // materials - smooth, natural look
+  const skinMat = new THREE.MeshStandardMaterial({ color: 0xC49A6C, roughness: 0.65, metalness: 0.02 });
   const shirtMat = new THREE.MeshStandardMaterial({ color: 0x3a3a2a, roughness: 0.85 });
   const pantsMat = new THREE.MeshStandardMaterial({ color: 0x2a2a22, roughness: 0.9 });
   const hairMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.95 });
   const bootMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.8, metalness: 0.1 });
 
-  const torso = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.6, 0.3), shirtMat);
-  torso.position.set(0, 0.45, -0.15);
-  torso.rotation.x = 0.6;
-  player.add(torso);
+  // helper: create a limb segment (capsule-like) between two points
+  function limb(mat, r1, r2, p1, p2) {
+    const dir = new THREE.Vector3().subVectors(p2, p1);
+    const len = dir.length();
+    const mid = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
+    const geo = new THREE.CylinderGeometry(r1, r2, len, 12);
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.copy(mid);
+    // orient cylinder along direction
+    const up = new THREE.Vector3(0, 1, 0);
+    const q = new THREE.Quaternion().setFromUnitVectors(up, dir.normalize());
+    mesh.quaternion.copy(q);
+    mesh.castShadow = true;
+    return mesh;
+  }
 
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 12), skinMat);
-  head.position.set(0, 0.75, -0.45);
-  head.scale.set(1, 1.05, 0.95);
-  player.add(head);
+  // joint sphere for smooth connections
+  function joint(mat, r, pos) {
+    const geo = new THREE.SphereGeometry(r, 12, 12);
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.copy(pos);
+    mesh.castShadow = true;
+    return mesh;
+  }
 
-  const hair = new THREE.Mesh(new THREE.SphereGeometry(0.21, 10, 10), hairMat);
-  hair.position.set(0, 0.8, -0.42);
-  hair.scale.set(1, 0.8, 1);
-  player.add(hair);
+  // key body points (crouching, hunched forward, aiming)
+  const hip = new THREE.Vector3(0, 0.2, 0);
+  const chest = new THREE.Vector3(0, 0.5, -0.2);
+  const neckPt = new THREE.Vector3(0, 0.7, -0.38);
+  const headPt = new THREE.Vector3(0, 0.85, -0.45);
 
-  const neckGeo = new THREE.CylinderGeometry(0.08, 0.1, 0.12, 8);
-  const neck = new THREE.Mesh(neckGeo, skinMat);
-  neck.position.set(0, 0.68, -0.35);
-  neck.rotation.x = 0.4;
-  player.add(neck);
+  // right arm (trigger hand)
+  const rShoulder = new THREE.Vector3(0.28, 0.6, -0.28);
+  const rElbow = new THREE.Vector3(0.32, 0.42, -0.55);
+  const rHand = new THREE.Vector3(0.22, 0.35, -0.78);
 
-  const shoulderR = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), shirtMat);
-  shoulderR.position.set(0.32, 0.6, -0.25);
-  player.add(shoulderR);
-  const upperArmR = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.06, 0.3, 8), shirtMat);
-  upperArmR.position.set(0.35, 0.5, -0.4);
-  upperArmR.rotation.x = -1.2;
-  upperArmR.rotation.z = -0.2;
-  player.add(upperArmR);
-  const lowerArmR = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.05, 0.28, 8), skinMat);
-  lowerArmR.position.set(0.35, 0.38, -0.6);
-  lowerArmR.rotation.x = -0.5;
-  player.add(lowerArmR);
-  const handR = new THREE.Mesh(new THREE.SphereGeometry(0.05, 6, 6), skinMat);
-  handR.position.set(0.35, 0.32, -0.72);
-  player.add(handR);
+  // left arm (forestock hand, reaching forward)
+  const lShoulder = new THREE.Vector3(-0.28, 0.6, -0.28);
+  const lElbow = new THREE.Vector3(-0.22, 0.4, -0.6);
+  const lHand = new THREE.Vector3(-0.1, 0.32, -0.9);
 
-  const shoulderL = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), shirtMat);
-  shoulderL.position.set(-0.32, 0.6, -0.25);
-  player.add(shoulderL);
-  const upperArmL = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.06, 0.3, 8), shirtMat);
-  upperArmL.position.set(-0.32, 0.48, -0.45);
-  upperArmL.rotation.x = -1.4;
-  upperArmL.rotation.z = 0.3;
-  player.add(upperArmL);
-  const lowerArmL = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.05, 0.28, 8), skinMat);
-  lowerArmL.position.set(-0.25, 0.32, -0.7);
-  lowerArmL.rotation.x = -0.3;
-  player.add(lowerArmL);
-  const handL = new THREE.Mesh(new THREE.SphereGeometry(0.05, 6, 6), skinMat);
-  handL.position.set(-0.2, 0.28, -0.82);
-  player.add(handL);
+  // right leg (crouching)
+  const rHip = new THREE.Vector3(0.14, 0.18, 0);
+  const rKnee = new THREE.Vector3(0.18, 0.06, 0.25);
+  const rAnkle = new THREE.Vector3(0.18, -0.06, 0.42);
 
-  const hipR = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), pantsMat);
-  hipR.position.set(0.15, 0.18, 0);
-  player.add(hipR);
-  const thighR = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.08, 0.35, 8), pantsMat);
-  thighR.position.set(0.18, 0.12, 0.15);
-  thighR.rotation.x = 1.3;
-  player.add(thighR);
-  const shinR = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.06, 0.3, 8), pantsMat);
-  shinR.position.set(0.18, 0.05, 0.38);
-  shinR.rotation.x = 0.2;
-  player.add(shinR);
-  const bootR = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.08, 0.18), bootMat);
-  bootR.position.set(0.18, -0.02, 0.48);
-  player.add(bootR);
+  // left leg
+  const lHip = new THREE.Vector3(-0.14, 0.18, 0);
+  const lKnee = new THREE.Vector3(-0.18, 0.06, 0.25);
+  const lAnkle = new THREE.Vector3(-0.18, -0.06, 0.42);
 
-  const hipL = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), pantsMat);
-  hipL.position.set(-0.15, 0.18, 0);
-  player.add(hipL);
-  const thighL = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.08, 0.35, 8), pantsMat);
-  thighL.position.set(-0.18, 0.12, 0.15);
-  thighL.rotation.x = 1.3;
-  player.add(thighL);
-  const shinL = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.06, 0.3, 8), pantsMat);
-  shinL.position.set(-0.18, 0.05, 0.38);
-  shinL.rotation.x = 0.2;
-  player.add(shinL);
-  const bootL = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.08, 0.18), bootMat);
-  bootL.position.set(-0.18, -0.02, 0.48);
-  player.add(bootL);
+  // TORSO - lathe profile for organic shape
+  const torsoProfile = [
+    new THREE.Vector2(0.14, 0),    // waist
+    new THREE.Vector2(0.16, 0.08),
+    new THREE.Vector2(0.2, 0.18),  // belly
+    new THREE.Vector2(0.23, 0.28), // ribs
+    new THREE.Vector2(0.24, 0.35), // chest
+    new THREE.Vector2(0.22, 0.42),
+    new THREE.Vector2(0.15, 0.48), // shoulders narrow
+    new THREE.Vector2(0.08, 0.52), // neck base
+  ];
+  const torsoGeo = new THREE.LatheGeometry(torsoProfile, 16);
+  const torsoMesh = new THREE.Mesh(torsoGeo, shirtMat);
+  torsoMesh.position.copy(hip);
+  torsoMesh.castShadow = true;
+  // tilt torso forward for crouching
+  const torsoDir = new THREE.Vector3().subVectors(neckPt, hip).normalize();
+  const torsoQ = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), torsoDir);
+  torsoMesh.quaternion.copy(torsoQ);
+  player.add(torsoMesh);
 
-  player.castShadow = true;
+  // shoulder pads - wider look
+  player.add(joint(shirtMat, 0.13, new THREE.Vector3(0.3, 0.58, -0.26)));
+  player.add(joint(shirtMat, 0.13, new THREE.Vector3(-0.3, 0.58, -0.26)));
+
+  // NECK
+  player.add(limb(skinMat, 0.08, 0.07, neckPt, headPt));
+  player.add(joint(skinMat, 0.09, neckPt));
+
+  // HEAD - composite for more realistic shape
+  const headMesh = new THREE.Mesh(new THREE.SphereGeometry(0.19, 16, 16), skinMat);
+  headMesh.position.copy(headPt);
+  headMesh.scale.set(0.95, 1.1, 0.9);
+  headMesh.castShadow = true;
+  player.add(headMesh);
+
+  // jaw
+  const jawMesh = new THREE.Mesh(new THREE.SphereGeometry(0.13, 10, 10), skinMat);
+  jawMesh.position.set(headPt.x, headPt.y - 0.1, headPt.z - 0.04);
+  jawMesh.scale.set(0.9, 0.6, 0.85);
+  player.add(jawMesh);
+
+  // nose
+  const noseMesh = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.08, 6), skinMat);
+  noseMesh.position.set(headPt.x, headPt.y - 0.02, headPt.z - 0.2);
+  noseMesh.rotation.x = -Math.PI / 2;
+  player.add(noseMesh);
+
+  // ears
+  for (let side of [-1, 1]) {
+    const ear = new THREE.Mesh(new THREE.SphereGeometry(0.04, 6, 6), skinMat);
+    ear.position.set(headPt.x + side * 0.18, headPt.y - 0.02, headPt.z + 0.02);
+    ear.scale.set(0.5, 1, 0.7);
+    player.add(ear);
+  }
+
+  // HAIR - better coverage
+  const hairMain = new THREE.Mesh(new THREE.SphereGeometry(0.2, 14, 14), hairMat);
+  hairMain.position.set(headPt.x, headPt.y + 0.06, headPt.z + 0.03);
+  hairMain.scale.set(1, 0.7, 1.05);
+  player.add(hairMain);
+  // hair sides
+  for (let side of [-1, 1]) {
+    const hairSide = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), hairMat);
+    hairSide.position.set(headPt.x + side * 0.14, headPt.y + 0.02, headPt.z + 0.04);
+    hairSide.scale.set(0.7, 0.9, 0.8);
+    player.add(hairSide);
+  }
+
+  // RIGHT ARM
+  player.add(joint(shirtMat, 0.1, rShoulder));
+  player.add(limb(shirtMat, 0.08, 0.065, rShoulder, rElbow));
+  player.add(joint(skinMat, 0.065, rElbow));
+  player.add(limb(skinMat, 0.06, 0.05, rElbow, rHand));
+  player.add(joint(skinMat, 0.055, rHand));
+
+  // LEFT ARM
+  player.add(joint(shirtMat, 0.1, lShoulder));
+  player.add(limb(shirtMat, 0.08, 0.065, lShoulder, lElbow));
+  player.add(joint(skinMat, 0.065, lElbow));
+  player.add(limb(skinMat, 0.06, 0.05, lElbow, lHand));
+  player.add(joint(skinMat, 0.055, lHand));
+
+  // RIGHT LEG
+  player.add(joint(pantsMat, 0.1, rHip));
+  player.add(limb(pantsMat, 0.1, 0.08, rHip, rKnee));
+  player.add(joint(pantsMat, 0.08, rKnee));
+  player.add(limb(pantsMat, 0.075, 0.065, rKnee, rAnkle));
+  player.add(joint(bootMat, 0.07, rAnkle));
+  // boot
+  const bootRMesh = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.07, 0.2), bootMat);
+  bootRMesh.position.set(rAnkle.x, rAnkle.y - 0.03, rAnkle.z + 0.04);
+  player.add(bootRMesh);
+
+  // LEFT LEG
+  player.add(joint(pantsMat, 0.1, lHip));
+  player.add(limb(pantsMat, 0.1, 0.08, lHip, lKnee));
+  player.add(joint(pantsMat, 0.08, lKnee));
+  player.add(limb(pantsMat, 0.075, 0.065, lKnee, lAnkle));
+  player.add(joint(bootMat, 0.07, lAnkle));
+  const bootLMesh = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.07, 0.2), bootMat);
+  bootLMesh.position.set(lAnkle.x, lAnkle.y - 0.03, lAnkle.z + 0.04);
+  player.add(bootLMesh);
+
   player.position.set(0, -0.35, 0.3);
   carpet.add(player);
 }
