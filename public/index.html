@@ -468,148 +468,173 @@ function buildAK47() {
 function createJet() {
   const jet = new THREE.Group();
 
-  const jetMat = new THREE.MeshStandardMaterial({ color: 0x9B8B6E, metalness: 0.4, roughness: 0.5 });
-  const jetDark = new THREE.MeshStandardMaterial({ color: 0x6B5B4E, metalness: 0.5, roughness: 0.4 });
-  const jetLight = new THREE.MeshStandardMaterial({ color: 0xAA9A7E, metalness: 0.3, roughness: 0.6 });
+  const jetMat = new THREE.MeshStandardMaterial({ color: 0x8B7D6B, metalness: 0.35, roughness: 0.55 });
+  const jetDark = new THREE.MeshStandardMaterial({ color: 0x5C5040, metalness: 0.4, roughness: 0.5 });
+  const jetLight = new THREE.MeshStandardMaterial({ color: 0xA89880, metalness: 0.3, roughness: 0.6 });
+  const exhaustMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, metalness: 0.9, roughness: 0.15 });
 
-  const fuselageGeo = new THREE.CylinderGeometry(0.5, 0.7, 8, 12);
-  const fuselage = new THREE.Mesh(fuselageGeo, jetMat);
-  fuselage.rotation.x = Math.PI / 2;
-  fuselage.castShadow = true;
-  jet.add(fuselage);
+  // fuselage - long tapered cylinder
+  const fuse1 = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.7, 5, 16), jetMat);
+  fuse1.rotation.x = Math.PI / 2;
+  fuse1.position.z = 0;
+  fuse1.castShadow = true;
+  jet.add(fuse1);
 
-  const noseGeo = new THREE.ConeGeometry(0.5, 2.5, 12);
-  const nose = new THREE.Mesh(noseGeo, jetLight);
+  // rear fuselage narrows
+  const fuse2 = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.55, 3, 16), jetMat);
+  fuse2.rotation.x = Math.PI / 2;
+  fuse2.position.z = 4;
+  jet.add(fuse2);
+
+  // nose cone
+  const nose = new THREE.Mesh(new THREE.ConeGeometry(0.55, 3, 16), jetLight);
   nose.rotation.x = Math.PI / 2;
-  nose.position.z = -5.2;
+  nose.position.z = -4;
   nose.castShadow = true;
   jet.add(nose);
 
-  const intakeGeo = new THREE.CylinderGeometry(0.35, 0.4, 1.5, 10);
-  const intakeMat = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.8, roughness: 0.2 });
-  for (let side of [-1, 1]) {
-    const intake = new THREE.Mesh(intakeGeo, intakeMat);
-    intake.rotation.x = Math.PI / 2;
-    intake.position.set(side * 0.6, -0.2, -2.5);
-    jet.add(intake);
-  }
+  // radome tip
+  const radome = new THREE.Mesh(new THREE.SphereGeometry(0.15, 8, 8), jetDark);
+  radome.position.z = -5.5;
+  jet.add(radome);
 
-  const canopyGeo = new THREE.SphereGeometry(0.38, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2);
-  const canopyMat = new THREE.MeshStandardMaterial({
-    color: 0x4488aa, metalness: 0.95, roughness: 0.05, transparent: true, opacity: 0.5
-  });
-  const canopy = new THREE.Mesh(canopyGeo, canopyMat);
-  canopy.position.set(0, 0.5, -2);
-  jet.add(canopy);
-  const canopyFrame = new THREE.Mesh(
-    new THREE.TorusGeometry(0.38, 0.02, 6, 12, Math.PI),
-    jetDark
+  // canopy
+  const canopy = new THREE.Mesh(
+    new THREE.SphereGeometry(0.4, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.55),
+    new THREE.MeshStandardMaterial({ color: 0x557799, metalness: 0.9, roughness: 0.05, transparent: true, opacity: 0.45 })
   );
-  canopyFrame.position.set(0, 0.5, -2);
-  canopyFrame.rotation.x = -Math.PI / 2;
-  jet.add(canopyFrame);
+  canopy.position.set(0, 0.45, -1.5);
+  jet.add(canopy);
 
-  const wingShape = new THREE.Shape();
-  wingShape.moveTo(0, 0);
-  wingShape.lineTo(5, -1.5);
-  wingShape.lineTo(5, -1.8);
-  wingShape.lineTo(1.5, -0.3);
-  wingShape.lineTo(0, -0.5);
-  wingShape.closePath();
-  const wingExtrudeSettings = { depth: 0.08, bevelEnabled: false };
+  // canopy rail
+  const canopyRail = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.06, 1.2), jetDark);
+  canopyRail.position.set(0, 0.7, -1.5);
+  jet.add(canopyRail);
+
+  // main wings - swept, tapered
   for (let side of [-1, 1]) {
-    const wingGeo = new THREE.ExtrudeGeometry(wingShape, wingExtrudeSettings);
+    const wingGeo = new THREE.BoxGeometry(5.5, 0.1, 2.2);
     const wing = new THREE.Mesh(wingGeo, jetMat);
-    wing.position.set(0, 0, 0.5);
-    wing.scale.x = side;
+    wing.position.set(side * 3.2, -0.05, 0.3);
+    wing.rotation.z = side * 0.02;
     wing.castShadow = true;
     jet.add(wing);
+
+    // wing tip
+    const tipGeo = new THREE.BoxGeometry(0.8, 0.08, 1.4);
+    const tip = new THREE.Mesh(tipGeo, jetDark);
+    tip.position.set(side * 5.9, -0.05, 0.6);
+    jet.add(tip);
+
+    // leading edge slat
+    const slatGeo = new THREE.BoxGeometry(4.5, 0.06, 0.2);
+    const slat = new THREE.Mesh(slatGeo, jetDark);
+    slat.position.set(side * 3.5, -0.02, -0.8);
+    jet.add(slat);
   }
 
-  const tailShape = new THREE.Shape();
-  tailShape.moveTo(0, 0);
-  tailShape.lineTo(1.8, -0.8);
-  tailShape.lineTo(1.8, -1);
-  tailShape.lineTo(0, -0.3);
-  tailShape.closePath();
+  // horizontal stabilizers
   for (let side of [-1, 1]) {
-    const tailGeo = new THREE.ExtrudeGeometry(tailShape, { depth: 0.06, bevelEnabled: false });
-    const tailWing = new THREE.Mesh(tailGeo, jetDark);
-    tailWing.position.set(0, 0, 3);
-    tailWing.scale.x = side;
-    jet.add(tailWing);
+    const stabGeo = new THREE.BoxGeometry(2.5, 0.08, 1.2);
+    const stab = new THREE.Mesh(stabGeo, jetDark);
+    stab.position.set(side * 1.6, 0.1, 4.8);
+    jet.add(stab);
   }
 
-  for (let side of [-1, 1]) {
-    const vertStabShape = new THREE.Shape();
-    vertStabShape.moveTo(0, 0);
-    vertStabShape.lineTo(-0.8, 2.2);
-    vertStabShape.lineTo(0.5, 2);
-    vertStabShape.lineTo(1.2, 0);
-    vertStabShape.closePath();
-    const vertGeo = new THREE.ExtrudeGeometry(vertStabShape, { depth: 0.06, bevelEnabled: false });
-    const vertStab = new THREE.Mesh(vertGeo, jetDark);
-    vertStab.position.set(side * 0.4, 0.3, 3);
-    vertStab.rotation.y = side * 0.15;
-    jet.add(vertStab);
-  }
+  // vertical stabilizer (single tall tail)
+  const vertGeo = new THREE.BoxGeometry(0.1, 2.8, 2);
+  const vert = new THREE.Mesh(vertGeo, jetDark);
+  vert.position.set(0, 1.5, 4.5);
+  jet.add(vert);
 
-  for (let side of [-1, 1]) {
-    const exhaustGeo = new THREE.CylinderGeometry(0.3, 0.25, 0.8, 10);
-    const exhaustMat = new THREE.MeshStandardMaterial({ color: 0x222222, metalness: 0.9, roughness: 0.2 });
-    const exhaust = new THREE.Mesh(exhaustGeo, exhaustMat);
-    exhaust.rotation.x = Math.PI / 2;
-    exhaust.position.set(side * 0.35, 0, 4.2);
-    jet.add(exhaust);
+  // rudder
+  const rudder = new THREE.Mesh(new THREE.BoxGeometry(0.06, 2.2, 0.6), jetMat);
+  rudder.position.set(0, 1.4, 5.4);
+  jet.add(rudder);
 
-    const innerGeo = new THREE.CylinderGeometry(0.2, 0.2, 0.3, 8);
-    const innerMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.95, roughness: 0.1 });
-    const inner = new THREE.Mesh(innerGeo, innerMat);
-    inner.rotation.x = Math.PI / 2;
-    inner.position.set(side * 0.35, 0, 4.5);
-    jet.add(inner);
-  }
+  // engine exhaust nozzle
+  const nozzle = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.35, 1.2, 12), exhaustMat);
+  nozzle.rotation.x = Math.PI / 2;
+  nozzle.position.z = 5.8;
+  jet.add(nozzle);
 
-  const afterburnerGeo = new THREE.ConeGeometry(0.35, 2.5, 8);
-  const afterburnerMat = new THREE.MeshBasicMaterial({
-    color: 0xff6600, transparent: true, opacity: 0.5
-  });
-  const afterburner = new THREE.Mesh(afterburnerGeo, afterburnerMat);
+  // inner exhaust ring
+  const innerNozzle = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.4, 10), exhaustMat);
+  innerNozzle.rotation.x = Math.PI / 2;
+  innerNozzle.position.z = 6.3;
+  jet.add(innerNozzle);
+
+  // afterburner flame
+  const afterburner = new THREE.Mesh(
+    new THREE.ConeGeometry(0.3, 3, 8),
+    new THREE.MeshBasicMaterial({ color: 0xff5500, transparent: true, opacity: 0.5 })
+  );
   afterburner.rotation.x = -Math.PI / 2;
-  afterburner.position.z = 5.5;
+  afterburner.position.z = 7.5;
   jet.add(afterburner);
 
   const afterburnerInner = new THREE.Mesh(
-    new THREE.ConeGeometry(0.15, 1.5, 8),
+    new THREE.ConeGeometry(0.12, 2, 8),
     new THREE.MeshBasicMaterial({ color: 0xffcc44, transparent: true, opacity: 0.7 })
   );
   afterburnerInner.rotation.x = -Math.PI / 2;
-  afterburnerInner.position.z = 5.0;
+  afterburnerInner.position.z = 7;
   jet.add(afterburnerInner);
 
+  // underwing pylons + missiles
   for (let side of [-1, 1]) {
-    const pylonGeo = new THREE.BoxGeometry(0.06, 0.15, 0.4);
-    const pylon = new THREE.Mesh(pylonGeo, jetDark);
-    pylon.position.set(side * 2.2, -0.25, 0);
-    jet.add(pylon);
+    for (let p = 0; p < 2; p++) {
+      const px = side * (1.8 + p * 1.8);
+      const pylonGeo = new THREE.BoxGeometry(0.06, 0.2, 0.5);
+      const pylon = new THREE.Mesh(pylonGeo, jetDark);
+      pylon.position.set(px, -0.25, 0.3);
+      jet.add(pylon);
 
-    const missileGeo = new THREE.CylinderGeometry(0.05, 0.04, 1.2, 6);
-    const missileMat = new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.6, roughness: 0.3 });
-    const missile = new THREE.Mesh(missileGeo, missileMat);
-    missile.rotation.x = Math.PI / 2;
-    missile.position.set(side * 2.2, -0.4, 0);
-    jet.add(missile);
-    const missileTip = new THREE.Mesh(
-      new THREE.ConeGeometry(0.05, 0.2, 6),
-      missileMat
+      const missileBody = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.045, 0.04, 1.4, 6),
+        new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.6, roughness: 0.3 })
+      );
+      missileBody.rotation.x = Math.PI / 2;
+      missileBody.position.set(px, -0.42, 0.3);
+      jet.add(missileBody);
+
+      const missileTip = new THREE.Mesh(
+        new THREE.ConeGeometry(0.045, 0.25, 6),
+        new THREE.MeshStandardMaterial({ color: 0xdddddd, metalness: 0.5 })
+      );
+      missileTip.rotation.x = Math.PI / 2;
+      missileTip.position.set(px, -0.42, -0.5);
+      jet.add(missileTip);
+
+      // missile fins
+      for (let f of [-1, 1]) {
+        const finGeo = new THREE.BoxGeometry(0.2, 0.01, 0.12);
+        const fin = new THREE.Mesh(finGeo, new THREE.MeshStandardMaterial({ color: 0xaaaaaa }));
+        fin.position.set(px + f * 0.1, -0.42, 0.85);
+        jet.add(fin);
+      }
+    }
+  }
+
+  // intakes
+  for (let side of [-1, 1]) {
+    const intakeGeo = new THREE.CylinderGeometry(0.3, 0.35, 1.8, 10);
+    const intake = new THREE.Mesh(intakeGeo, exhaustMat);
+    intake.rotation.x = Math.PI / 2;
+    intake.position.set(side * 0.55, -0.15, -1.8);
+    jet.add(intake);
+
+    // intake lip
+    const lip = new THREE.Mesh(
+      new THREE.TorusGeometry(0.35, 0.04, 6, 12),
+      jetLight
     );
-    missileTip.rotation.x = Math.PI / 2;
-    missileTip.position.set(side * 2.2, -0.4, -0.7);
-    jet.add(missileTip);
+    lip.position.set(side * 0.55, -0.15, -2.7);
+    jet.add(lip);
   }
 
   const hitbox = new THREE.Mesh(
-    new THREE.BoxGeometry(10, 3, 10),
+    new THREE.BoxGeometry(12, 3, 12),
     new THREE.MeshBasicMaterial({ visible: false })
   );
   jet.add(hitbox);
@@ -625,7 +650,7 @@ function createJet() {
   jet.userData.swaySpeed = 0.3 + Math.random() * 0.4;
   jet.userData.swayAmount = 1 + Math.random() * 2;
 
-  jet.scale.set(1.3, 1.3, 1.3);
+  jet.scale.set(1.4, 1.4, 1.4);
   return jet;
 }
 
